@@ -46,23 +46,43 @@
     <div id="toolbar">
         <div id="coords">(x0 | y0)</div>
         <form id="controls">
-            <input disabled type="checkbox" name="gridSnap"><label for="gridSnap">Grid Snap</label>
-            <input disabled type="checkbox" name="gridDisplay" checked><label for="gridDisplay">Show Grid</label>
-            <input disabled type="checkbox" name="alignSnap" checked><label for="alignSnap">Align Snap</label>
-            <input disabled type="checkbox" name="collisionSnap" checked><label for="collisionSnap">Collision Snap</label>
+            <input type="checkbox" id="grid-snap" name="gridsnap"><label for="grid-snap">Grid Snap</label>
+            <input type="checkbox" id="grid-display" name="griddisplay"><label for="grid-display">Show Grid</label>
+            <input type="checkbox" id="align-snap" name="alignsnap"><label for="align-snap">Align Snap</label>
+            <input type="checkbox" id="collision-snap" name="collisionsnap"><label for="collision-snap">Collision Snap</label>
         </form>
     </div>
 
     <div id="container">
-        <c-box></c-box>
+        <c-box>
+            <span slot="test-slot">Test</span>
+        </c-box>
         <c-box style="top:250px;left:500px;"></c-box>
         <c-box style="top:50px;left:450px;"></c-box>
     </div>
 
     <script>
+        const gridstep = 15; // needs to be added as attribute to c-boxes
+
         const container = document.getElementById("container");
         container.onmousemove = (event) => {
             document.getElementById("coords").innerText = `(x${event.offsetX} | y${event.offsetY})`;
+        }
+
+        // check for touchscreen functionality
+        const isMobile = () => {
+            try{ document.createEvent("TouchEvent"); return true; }
+            catch(e){ return false; }
+        }
+        if(isMobile()) alert('Hello! Please note: \nTouch screen functionality not yet implemented for this project!');
+
+        const form = document.getElementById("controls");
+        form.onchange = (event) => {
+            const srcElmt = event.srcElement;
+            const cBoxes = document.querySelectorAll("c-box");
+            cBoxes.forEach(cBox => srcElmt.checked ? cBox.setAttribute(srcElmt.name, '') : cBox.removeAttribute(srcElmt.name));
+
+            srcElmt.name == 'griddisplay' && srcElmt.checked ? container.style.backgroundSize = `${gridstep}px ${gridstep}px` : container.removeAttribute('style');
         }
     </script>
 </body>

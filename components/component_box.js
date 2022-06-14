@@ -30,19 +30,22 @@ customElements.define(`c-box`, class extends HTMLElement {
   }
 
   html() {
+    const testSlot = this.slotsArray.find(slot => slot.name = "test-slot")?.innerHTML || "";
+
     return /*html*/ `
       <div class="drag-handle">Drag me!</div>
       <div class="box"></div>
+      ${testSlot}
     `;
   }
 
-  js(innerElmts) {
+  js() {
     // config options
-    let isGridSnapping = false;
-    let isGridDisplaying = true;
-    let isAlignSnapping = true;
-    let isCollisionSnapping = true;
-    let step = 15;
+    let isGridSnapping = this.hasAttribute('gridsnap');
+    let isAlignSnapping = this.hasAttribute('alignsnap');
+    let isCollisionSnapping = this.hasAttribute('collisionsnap');
+    let step = this.getAttribute('gridstep') || 15;
+    
     let magRange = 8;
 
     const container = this.parentNode;
@@ -50,7 +53,6 @@ customElements.define(`c-box`, class extends HTMLElement {
     const dragContent = this;
     const computeDivStyle = (div, style) => parseInt(window.getComputedStyle(div).getPropertyValue(style));
 
-    if(isGridSnapping || isGridDisplaying) container.style.backgroundSize = `${step}px ${step}px`;
     const isMagSnapping = isAlignSnapping || isCollisionSnapping;
 
     // listen for container child changes and update containerElmts accordingly
@@ -161,29 +163,34 @@ customElements.define(`c-box`, class extends HTMLElement {
     };
   };
 
+  render() {
+    const componentName = self.tagName.toLowerCase().replace("component-", "");
+    const styleId = `style-component-${componentName}`;
+    if (!this.ownerDocument.querySelector(`#${styleId}`)) {
+      const cssTemp = document.createElement("template");
+      cssTemp.innerHTML += this.css();
+      cssTemp.content.querySelector("style").id = styleId;
+      this.ownerDocument.head.append(cssTemp.content);
+    }
+
+    const htmlTemp = document.createElement("template");
+    htmlTemp.innerHTML += this.html();
+    this.innerHTML = htmlTemp.innerHTML;
+    
+    this.js();
+  }
   constructor() {
     self = super();
   }
   connectedCallback() {
-    const innerElmts = [];
-    this.childNodes.forEach((elmt) => innerElmts.push(elmt));
-
-    const htmlTemp = document.createElement("template");
-    htmlTemp.innerHTML += this.html();
-    if (htmlTemp.content.firstElementChild) {
-      const componentName = self.tagName
-        .toLowerCase()
-        .replace("component-", "");
-      const styleId = `style-component-${componentName}`;
-      if (!this.ownerDocument.querySelector(`#${styleId}`)) {
-        const cssTemp = document.createElement("template");
-        cssTemp.innerHTML += this.css();
-        cssTemp.content.querySelector("style").id = styleId;
-        this.ownerDocument.head.append(cssTemp.content);
-      }
-      this.prepend(htmlTemp.content);
-
-      this.js(innerElmts);
+    this.slotsArray = [];
+    if (!this.rendered) {
+      this.querySelectorAll('[slot]').forEach(slot => this.slotsArray.push(slot));
+      this.render();
+      this.rendered = true;
     }
   }
+
+  static get observedAttributes() { return ['gridsnap','gridstep','alignsnap','collisionsnap']; }
+  attributeChangedCallback(name, oldValue, newValue) { if(this.rendered) this.render(); }
 });
