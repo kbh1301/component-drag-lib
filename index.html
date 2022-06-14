@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drag & Snap</title>
+    <script src="./components/component_box.js" type="module"></script>
+</head>
+<body>
+    <style>
+        body {
+            margin: 15px;
+        }
+
+        #toolbar {
+            display: flex;
+            gap: 20px;
+        }
+
+        #coords {
+            background-color: black;
+            color: white;
+            text-align: center;
+            width: 150px;
+        }
+
+        #controls > * {
+            padding-right: 35px;
+        }
+
+        #container {
+            position: relative;
+            box-sizing: content-box;
+
+            border: 2px solid black;
+            width: 750px;
+            height: 500px;
+            padding: 0px;
+            background-color: #e2a8ff;
+            background-clip: content-box;
+            background-image: radial-gradient(circle at 1px 1px,#4a006f 1px,transparent 0);
+        }
+    </style>
+
+    <div id="toolbar">
+        <div id="coords">(x0 | y0)</div>
+        <form id="controls">
+            <input disabled type="checkbox" name="gridSnap"><label for="gridSnap">Grid Snap</label>
+            <input disabled type="checkbox" name="gridDisplay" checked><label for="gridDisplay">Show Grid</label>
+            <input disabled type="checkbox" name="alignSnap" checked><label for="alignSnap">Align Snap</label>
+            <input disabled type="checkbox" name="collisionSnap" checked><label for="collisionSnap">Collision Snap</label>
+        </form>
+    </div>
+
+    <div id="container">
+        <c-box></c-box>
+        <c-box style="top:250px;left:500px;"></c-box>
+        <c-box style="top:50px;left:450px;"></c-box>
+    </div>
+
+    <script>
+        const container = document.getElementById("container");
+        container.onmousemove = (event) => {
+            document.getElementById("coords").innerText = `(x${event.offsetX} | y${event.offsetY})`;
+        }
+    </script>
+</body>
+</html>
