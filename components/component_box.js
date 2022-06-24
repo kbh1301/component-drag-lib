@@ -30,141 +30,143 @@ customElements.define(`c-box`, class extends HTMLElement {
   }
 
   html() {
-    const testSlot = this.slotsArray.find(slot => slot.name = "test-slot")?.innerHTML || "";
+    let defaultSlot = '';
+    this.innerElmts.forEach(elmt => { if(!elmt.slot) defaultSlot += elmt.outerHTML || elmt.textContent; });
 
     return /*html*/ `
       <div class="drag-handle">Drag me!</div>
-      <div class="box"></div>
-      ${testSlot}
+      <div class="box">${defaultSlot}</div>
     `;
   }
 
-  js() {
-    // config options
-    let isGridSnapping = this.hasAttribute('gridsnap');
-    let isAlignSnapping = this.hasAttribute('alignsnap');
-    let isCollisionSnapping = this.hasAttribute('collisionsnap');
-    let step = this.getAttribute('gridstep') || 15;
-    
-    let magRange = 8;
+  dragModule(event, {ctr,dragComponent,gridSnap,snapStep=25,alignSnap,borderSnap,magStr=8}) {
+    // calculate container-based boundaries
+    const calcCtrBounds = (ctr,dragComponent) => {
+      const computeDivStyle = (div, style) => parseInt(window.getComputedStyle(div).getPropertyValue(style));
+      // compute container boundaries
+      const boundL = computeDivStyle(ctr, "padding-left");
+      const boundR = computeDivStyle(ctr, "width") - dragComponent.offsetWidth + boundL;
+      const boundT = computeDivStyle(ctr, "padding-top");
+      const boundB = computeDivStyle(ctr, "height") - dragComponent.offsetHeight + boundT;
 
-    const container = this.parentNode;
-    const dragHandle = this.querySelector(".drag-handle");
-    const dragContent = this;
-    const computeDivStyle = (div, style) => parseInt(window.getComputedStyle(div).getPropertyValue(style));
-
-    const isMagSnapping = isAlignSnapping || isCollisionSnapping;
-
-    // listen for container child changes and update containerElmts accordingly
-    let containerElmts = Array.from(container.children);
-    if(isMagSnapping) {
-      const observer = new MutationObserver(() => containerElmts = Array.from(container.children));
-      observer.observe(container, {attributes:true, attributeFilter:['style'], subtree: true, childList:true});
+      return {bL:boundL,bR:boundR,bT:boundT,bB:boundB};
     }
 
-    // dragHandle handling
-    dragHandle.onmousedown = (event) => {
-      event.preventDefault();
+    // calculate curCoords for grid snapping
+    const calcSnap = ([x,y],step) => {
+      // grid snap function
+      const snap = (val) => Math.round(val/step) * step;
 
-      // map all coordinates for snapping
-      const magPoints = new Map();
-      if(isMagSnapping) {
-        magPoints.set('magL', []);
-        magPoints.set('magR', []);
-        magPoints.set('magT', []);
-        magPoints.set('magB', []);
+      return [snap(x), snap(y)];
+    }
 
-        const siblingELmts = containerElmts.filter(elmt => elmt != this);
-        siblingELmts.forEach(sibling => {
+    // calculate curCoords for boundary limitation
+    const calcBound = ([x,y],{bL,bR,bT,bB}) => {
+      // clamp function
+      const minmax = (val, min, max) => Math.min(Math.max(val, min), max);
+
+      return [minmax(x,bL,bR), minmax(y,bT,bB)];
+    }
+
+    // calculate coordinates of each side of each sibling element within container
+    const calcMagPoints = (ctr,dragComponent) => {
+      const magPoints = {magL:[],magR:[],magT:[],magB:[]};
+      const siblingElmts = Array.from(ctr.children).filter(elmt => elmt != dragComponent);
+      
+      siblingElmts.forEach(sibling => {
           const sibL = sibling.offsetLeft;
           const sibR = sibL + sibling.offsetWidth;
           const sibT = sibling.offsetTop;
           const sibB = sibT + sibling.offsetHeight;
 
-          magPoints.get('magL').push(sibL);
-          magPoints.get('magR').push(sibR);
-          magPoints.get('magT').push(sibT);
-          magPoints.get('magB').push(sibB);
-        });
+          magPoints.magL.push(sibL);
+          magPoints.magR.push(sibR);
+          magPoints.magT.push(sibT);
+          magPoints.magB.push(sibB);
+      });
+
+      return magPoints;
+    }
+
+    // calculate curCoords for mag snapping
+    const calcMagSnap = ([x,y],magPoints,dragComponent,alignSnap,borderSnap,magStr) => {
+      const xR = x + dragComponent.offsetWidth;
+      const yB = y + dragComponent.offsetHeight;
+
+      const findSnap = (magPoint, dragPoint) => {
+          return magPoints[magPoint].find(point => {
+              return dragPoint > point - magStr && dragPoint < point + magStr
+          });
       }
 
-      // compute container boundaries
-      const boundL = computeDivStyle(container, "padding-left");
-      const boundR = computeDivStyle(container, "width") - dragContent.offsetWidth + boundL;
-      const boundT = computeDivStyle(container, "padding-top");
-      const boundB = computeDivStyle(container, "height") - dragContent.offsetHeight + boundT;
+      if(alignSnap == true) {
+          x = findSnap('magL',x) || findSnap('magR',xR) - dragComponent.offsetWidth || x;
+          y = findSnap('magT',y) || findSnap('magB',yB) - dragComponent.offsetHeight || y;
+      }
 
-      //get initial cursor position relative to dragContent's offset
-      const initX = event.clientX - dragContent.offsetLeft; 
-      const initY = event.clientY - dragContent.offsetTop;
+      if(borderSnap == true) {
+          x = findSnap('magR',x) || findSnap('magL',xR) - dragComponent.offsetWidth || x;
+          y = findSnap('magB',y) || findSnap('magT',yB) - dragComponent.offsetHeight || y;
+      }
 
-      document.onmouseup = () => (document.onmouseup = document.onmousemove = null); //remove document events on mouseup
+      return [x,y];
+    }
+
+    // MAIN FUNCTION
+    const drag = () => {
+      event.preventDefault();
+      // CONFIG DEPENDENT: initialize config-enabled variables
+      const ctrBounds = ctr ? calcCtrBounds(ctr,dragComponent) : undefined;
+      const magPoints = (ctr && (alignSnap || borderSnap)) ? calcMagPoints(ctr,dragComponent) : undefined;
+
+      // calc initial component coordinates relative to cursor offset
+      const initX = event.clientX - dragComponent.offsetLeft;
+      const initY = event.clientY - dragComponent.offsetTop;
+      
+      document.onmouseup = () => document.onmouseup = document.onmousemove = null;;
       document.onmousemove = (event) => {
-        event.preventDefault();
+          event.preventDefault();
+      
+          // calc current component coordinates
+          let curX = event.clientX - initX;
+          let curY = event.clientY - initY;
+          let curCoords = [curX,curY];
 
-        //get current cursor position relative to initial cursor position
-        const curX = event.clientX - initX;
-        const curY = event.clientY - initY;
+          // CONFIG DEPENDENT: alter curCoords
+          if(gridSnap == true) curCoords = calcSnap(curCoords,snapStep);
+          if(ctrBounds != undefined) curCoords = calcBound(curCoords, ctrBounds);
+          if(magPoints != undefined) curCoords = calcMagSnap(curCoords,magPoints,dragComponent,alignSnap,borderSnap,magStr);
+      
+          // set component position
+          dragComponent.style.left = curCoords[0] + 'px';
+          dragComponent.style.top = curCoords[1] + 'px';
+      }
+    }
+    drag();
+  }
 
-        // calc target coordinates based on isGridSnapping
-        const snap = isGridSnapping ? (val, step) => Math.round(val / step) * step : null;
-        const valX = snap ? snap(curX, step) : curX;
-        const valY = snap ? snap(curY, step) : curY;
-        
-        const minmax = (val, min, max) => Math.min(Math.max(val, min), max); //clamp function
+  js() {
+    const controls = document.getElementById("controls");
+    const dragBar = this.querySelector(".drag-handle");
 
-        // set target coordinates
-        dragContent.style.left = minmax(valX, boundL, boundR) + "px";
-        dragContent.style.top = minmax(valY, boundT, boundB) + "px";
-
-        // handle mag snapping
-        if(isMagSnapping) {
-          // calc dragContent edges
-          const dragL = dragContent.offsetLeft;
-          const dragR = dragL + dragContent.offsetWidth;
-          const dragT = dragContent.offsetTop;
-          const dragB = dragT + dragContent.offsetHeight;
-
-          const handleMag = (mag, drag) => {
-            let magnetic;
-
-            if(magPoints.get(mag).some(elmt => {
-              if(drag > elmt - magRange && drag < elmt + magRange) {
-                magnetic = elmt;
-                return true;
-              }
-            })) {
-              switch(mag, drag) {
-                case 'magR', dragL:
-                case 'magL', dragL: return dragContent.style.left = magnetic + "px";
-                case 'magL', dragR:
-                case 'magR', dragR: return dragContent.style.left = magnetic - dragContent.offsetWidth + "px";
-                case 'magB', dragT:
-                case 'magT', dragT: return dragContent.style.top = magnetic + "px";
-                case 'magT', dragB:
-                case 'magB', dragB: return dragContent.style.top = magnetic - dragContent.offsetHeight + "px";
-              }
-            }
-          }
-          if(isAlignSnapping) {
-            handleMag('magL', dragL);
-            handleMag('magR', dragR);
-            handleMag('magT', dragT);
-            handleMag('magB', dragB);
-          }
-          if(isCollisionSnapping) {
-            handleMag('magL', dragR);
-            handleMag('magR', dragL);
-            handleMag('magB', dragT);
-            handleMag('magT', dragB);
-          }
-        };
-      };
-    };
+    dragBar.onmousedown = (event) => {
+      this.dragModule(event, {
+          dragComponent: this,
+          ctr: this.parentNode,
+          gridSnap: controls.gridsnap.checked,
+          snapStep: 25,
+          alignSnap: controls.alignsnap.checked,
+          borderSnap: controls.collisionsnap.checked,
+          magStr: 8
+      });
+    }
   };
 
+  static get observedAttributes() { return []; }
+  attributeChangedCallback(name, oldValue, newValue) { if(this.rendered) this.render(); }
+
   render() {
-    const componentName = self.tagName.toLowerCase().replace("component-", "");
+    const componentName = this.tagName.toLowerCase().replace("component-", "");
     const styleId = `style-component-${componentName}`;
     if (!this.ownerDocument.querySelector(`#${styleId}`)) {
       const cssTemp = document.createElement("template");
@@ -172,25 +174,20 @@ customElements.define(`c-box`, class extends HTMLElement {
       cssTemp.content.querySelector("style").id = styleId;
       this.ownerDocument.head.append(cssTemp.content);
     }
-
     const htmlTemp = document.createElement("template");
     htmlTemp.innerHTML += this.html();
-    this.innerHTML = htmlTemp.innerHTML;
-    
+    this.innerHTML = htmlTemp.innerHTML; 
     this.js();
   }
   constructor() {
-    self = super();
+    super();
   }
   connectedCallback() {
-    this.slotsArray = [];
+    this.innerElmts = [];
     if (!this.rendered) {
-      this.querySelectorAll('[slot]').forEach(slot => this.slotsArray.push(slot));
+      Array.from(this.childNodes).forEach(child => this.innerElmts.push(child));
       this.render();
       this.rendered = true;
     }
   }
-
-  static get observedAttributes() { return ['gridsnap','gridstep','alignsnap','collisionsnap']; }
-  attributeChangedCallback(name, oldValue, newValue) { if(this.rendered) this.render(); }
 });
