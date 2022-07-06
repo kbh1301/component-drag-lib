@@ -1,0 +1,24 @@
+{
+  "name": "drag-component",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "scripts": {
+
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kbh1301/drag-component.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kbh1301/drag-component/issues"
+  },
+  "homepage": "https://github.com/kbh1301/drag-component",
+  "devDependencies": {
+    "webpack": "^5.73.0",
+    "webpack-cli": "^4.10.0"
+  }
+}

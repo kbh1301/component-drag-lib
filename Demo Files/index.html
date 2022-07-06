@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drag & Snap</title>
+    <script src="./components/component_dragMenu.js" type="module"></script>
+    <script src="./components/component_box.js" type="module"></script>
+
+    <!-- CALL COMPONENT DRAG -->
+    <script src="../../dist/component-drag.min.js"></script>
+    <script type="module">
+        componentDragLib.componentDrag({
+            parentCtr: document.getElementById("free-ctr"),
+            controls: document.getElementById("drag-controls"),
+            sortClass: 'box',
+        })
+    </script>
+    <!-- END COMPONENT DRAG -->
+
+</head>
+<body>
+    <style>
+        body {
+            margin: 15px;
+        }
+        #toolbar {
+            display: flex;
+            gap: 20px;
+        }
+        #coords {
+            background-color: black;
+            color: white;
+            text-align: center;
+            width: 150px;
+        }
+        #controls > * {
+            padding-right: 35px;
+        }
+
+        #free-ctr {
+            box-sizing: content-box;
+            border: 2px solid black;
+            width: 1000px;
+            height: 500px;
+            padding: 0px;
+            background-color: #e2a8ff;
+        }
+    </style>
+
+    <div id="toolbar">
+        <div id="coords">(x0 | y0)</div>
+        <c-drag-menu></c-drag-menu>
+        <button id="gen-btn">Generate New Component</button>
+    </div>
+
+    <div id="free-ctr">
+        <c-box>
+            <span slot="test-slot">Test</span>
+            Test
+            <p>Test</p>
+            <div>Div</div>
+        </c-box>
+        <c-box style="top:250px;left:500px;"></c-box>
+        <c-box style="top:50px;left:450px;"></c-box>
+    </div>
+
+    <script>
+        /* handle coordinates functionality */
+        const ctr = document.getElementById("free-ctr");
+        ctr.onmousemove = (event) => {
+            document.getElementById("coords").innerText = `(x${event.offsetX} | y${event.offsetY})`;
+        }
+
+        /* handle component generation button */
+        const genBtn = document.getElementById("gen-btn");
+        genBtn.onclick = () => {
+            const newElmt = document.createElement("c-box");
+            ctr.append(newElmt);
+        };
+    </script>
+    <script>
+        /* check for touchscreen functionality */
+        const isMobile = () => {
+            try{ document.createEvent("TouchEvent"); return true; }
+            catch(e){ return false; }
+        }
+        if(isMobile()) alert('Hello! Please note: \nTouch screen functionality not yet implemented for this project!');
+    </script>
+</body>
+</html>
