@@ -76,6 +76,7 @@ function componentDragCore({parentCtr, component, dragHandle,sortctrs,snapStep,g
         }
     }
     function onDragStart(e) {
+        e.stopPropagation();
         /* disable drag ghost image */
         const span = document.createElement("span");
         e.dataTransfer.setDragImage(span,0,0);
