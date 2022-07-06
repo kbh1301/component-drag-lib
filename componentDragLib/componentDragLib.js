@@ -2,6 +2,8 @@ import { optionalsDragStart,optionalsDrag,optionalsMisc } from './_optionals.js'
 
 export function componentDrag({parentCtr=document.body,controls,dragClass="drag-handle",sortClass="sort-ctr"}) {
     parentCtr.style.position = 'relative';
+    parentCtr.style.boxSizing="content-box";
+    
 
     /* keep track of nodes that have had callCore run on */
     let activatedNodes = [];
