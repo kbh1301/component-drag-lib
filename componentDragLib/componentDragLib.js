@@ -37,7 +37,7 @@ export function componentDrag({parentCtr=document.body,controls,dragClass="drag-
         componentDragCore({
             parentCtr: parentCtr,
             component: component,
-            dragHandle: component.querySelector(`.${dragClass}`),
+            dragHandle: component.querySelector(`:scope > .${dragClass}`),
             sortctrs: component.querySelectorAll(`.${sortClass}`),
             snapStep: controls?.snapstep,
             magStr: controls?.magstr,

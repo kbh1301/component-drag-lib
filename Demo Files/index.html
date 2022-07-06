@@ -9,9 +9,18 @@
     <script src="./components/component_box.js" type="module"></script>
 
     <!-- CALL COMPONENT DRAG -->
-    <script src="../dist/component-drag.min.js"></script>
+    <!-- <script src="../dist/component-drag.min.js"></script>
     <script type="module">
         componentDragLib.componentDrag({
+            parentCtr: document.getElementById("free-ctr"),
+            controls: document.getElementById("drag-controls"),
+            sortClass: 'box',
+        })
+    </script> -->
+
+    <script type="module">
+        import { componentDrag } from '../componentDragLib/componentDragLib.js';
+        componentDrag({
             parentCtr: document.getElementById("free-ctr"),
             controls: document.getElementById("drag-controls"),
             sortClass: 'box',
