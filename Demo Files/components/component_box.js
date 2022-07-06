@@ -3,7 +3,6 @@ customElements.define(`c-box`, class extends HTMLElement {
     return /*html*/ `
       <style>
         c-box {
-          position: absolute;
           display: flex;
           flex-direction: column;
           width: fit-content;

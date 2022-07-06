@@ -3,7 +3,6 @@ import { optionalsDragStart,optionalsDrag,optionalsMisc } from './_optionals.js'
 export function componentDrag({parentCtr=document.body,controls,dragClass="drag-handle",sortClass="sort-ctr"}) {
     parentCtr.style.position = 'relative';
     parentCtr.style.boxSizing="content-box";
-    
 
     /* keep track of nodes that have had callCore run on */
     let activatedNodes = [];
@@ -13,6 +12,14 @@ export function componentDrag({parentCtr=document.body,controls,dragClass="drag-
         callCore(child);
         activatedNodes.push(child);
     })
+
+    /* run callCore on existing children of sort containers */
+    parentCtr.querySelectorAll(`.${sortClass}`).forEach(
+        sortCtr => Array.from(sortCtr.children).forEach(child => {
+            callCore(child);
+            activatedNodes.push(child);
+        })
+    )
 
     /* run callCore on new children of parentNode */
     const observer = new MutationObserver((mutationList) => {
@@ -42,6 +49,8 @@ export function componentDrag({parentCtr=document.body,controls,dragClass="drag-
 }
 
 function componentDragCore({parentCtr, component, dragHandle,sortctrs,snapStep,gridSnap,alignSnap,collisionSnap,magStr}) {
+    if(component.parentNode == parentCtr) component.style.position = "absolute";
+
     /* if dragHandle not provided, set to component */
     dragHandle = dragHandle ? dragHandle : component;
     dragHandle.draggable = true;
