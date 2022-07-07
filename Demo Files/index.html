@@ -82,6 +82,8 @@
         const genBtn = document.getElementById("gen-btn");
         genBtn.onclick = () => {
             const newElmt = document.createElement("c-box");
+            const newElmt2 = document.createElement("c-box");
+            newElmt.append(newElmt2);
             ctr.append(newElmt);
         };
     </script>

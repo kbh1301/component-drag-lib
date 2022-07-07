@@ -24,9 +24,17 @@ export function componentDrag({parentCtr=document.body,controls,dragClass="drag-
     /* run callCore on new children of parentNode */
     const observer = new MutationObserver((mutationList) => {
         mutationList[0].addedNodes.forEach(node => {
+            console.log(activatedNodes)
             if(!activatedNodes.includes(node)) {
                 callCore(node);
                 activatedNodes.push(node);
+
+                node.querySelectorAll(`.${sortClass}`).forEach(
+                    sortCtr => Array.from(sortCtr.children).forEach(child => {
+                        callCore(child);
+                        activatedNodes.push(child);
+                    })
+                )
             }
         });
     })
