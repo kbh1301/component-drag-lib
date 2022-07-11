@@ -124,7 +124,7 @@ function componentDragCore({parentCtr, component, dragHandle,sortctrs,snapStep,g
             component.style.top = curCoords.y + "px";
             component.style.zIndex = '10';
             component.style.pointerEvents = 'none';
-            component.style.filter = 'brightness(1.4)';
+            component.style.filter = 'opacity(.7)';
         }
     }
     function onDragEnd() {
